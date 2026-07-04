@@ -1,0 +1,160 @@
+{
+  "name": "Æsir 故事织机",
+  "description": "145门禁+15维指纹+修订建议-v4.1",
+  "version": "4.1",
+  "icon": "✦",
+  "workflows": [
+    {
+      "name": "diverge",
+      "description": "发散5条世界线(含可能性方向)",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "idea": {
+            "type": "string"
+          },
+          "previous_canvas": {
+            "type": "string"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "llm",
+          "type": "llm",
+          "model": "claude-3.5-sonnet",
+          "system": "你是一个创意思维伙伴。根据用户的模糊想法和上下文，生成5条不同的世界线。每条除前提句、调性、冲突、钩子外还要给出2-3个可能性方向。如果用户说了具体类型按类型惯例设计。格式:\n——世界线N——\n前提句:\n调性:\n冲突:\n类型提示:\n钩子:(150字)\n可能方向A:\n可能方向B:\n可能方向C:",
+          "prompt": "想法:{{idea}}\n已有画布:{{previous_canvas||'无'}}"
+        },
+        {
+          "id": "parse",
+          "type": "code",
+          "code": "function parse(raw){const lines=raw.split('\\n').filter(l=>l.trim());const r=[];let c={};for(const l of lines){if(l.includes('前提句')||l.includes('前提：'))c.premise=l.replace(/^前提句?[：:]\\s*/,'').trim();else if(l.includes('调性'))c.tone=l.replace(/^调性[：:]\\s*/,'').trim();else if(l.includes('冲突'))c.conflict=l.replace(/^冲突[：:]\\s*/,'').trim();else if(l.includes('类型提示'))c.genre=l.replace(/^类型提示[：:]\\s*/,'').trim();else if(l.includes('可能方向')){if(!c.dirs)c.dirs=[];c.dirs.push(l.replace(/^可能方向[ABC][：:]\\s*/,'').trim());}else if(l.includes('钩子'))c.hook=l.replace(/^钩子[：:]\\s*/,'').trim();else if(l.includes('——')){if(c.premise&&r.length<5)r.push({id:r.length+1,premise:c.premise,tone:c.tone||'悬疑暗流',conflict:c.conflict||'',genre:c.genre||'',hook:c.hook||'',directions:c.dirs||[]});c={};}}if(c.premise&&r.length<5)r.push({id:r.length+1,premise:c.premise,tone:c.tone||'悬疑暗流',hook:c.hook||'',directions:c.dirs||[]});return r;}"
+        }
+      ]
+    },
+    {
+      "name": "converge",
+      "description": "收敛故事单元(多粒度+分歧点)",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "idea": {
+            "type": "string"
+          },
+          "worldline": {
+            "type": "string"
+          },
+          "constraint": {
+            "type": "string"
+          },
+          "canvas_id": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "llm",
+          "type": "llm",
+          "model": "claude-3.5-sonnet",
+          "system": "写故事单元。三种粒度:short(300-500字)/standard(800-1200字)/outline(5-8节拍骨架)。必须SG5结构、完整故事、至少两条未闭合线索。关键决策点用【分歧点】标注两个走法。输出:\n——故事单元——\n(正文)\n——未闭合线索——\n线索1:\n——可发展的方向——\n方向1:\n——分歧点——",
+          "prompt": "想法:{{idea}}\n世界线:{{worldline}}\n约束:{{constraint||'无'}}\n画布ID:{{canvas_id||'新建'}}\n粒度:{{size||'standard'}}"
+        },
+        {
+          "id": "parse",
+          "type": "code",
+          "code": "function parse(r){const p=r.split(/——/);const res={};let s='meta';for(const x of p){const t=x.trim();if(t.includes('故事单元'))s='story';else if(t.includes('未闭合线索'))s='threads';else if(t.includes('可发展的方向'))s='dirs';else if(t.includes('分歧点'))s='bpoints';else{if(s==='story')res.main=(res.main||'')+t;else if(s==='threads')res.threads=(res.threads||'')+'\\n'+t;else if(s==='dirs')res.dirs=(res.dirs||'')+'\\n'+t;else if(s==='bpoints')res.bpoints=(res.bpoints||'')+'\\n'+t;}}return{main:(res.main||'').trim(),threads:(res.threads||'').trim(),directions:(res.dirs||'').trim(),branch_points:(res.bpoints||'').trim()};}"
+        }
+      ]
+    },
+    {
+      "name": "extend",
+      "description": "在故事画布上继续延展",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "canvas_summary": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "branch_choice": {
+            "type": "string"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "llm",
+          "type": "llm",
+          "model": "claude-3.5-sonnet",
+          "system": "基于已有画布和延展方向生成下一段故事单元。必须与未闭合线索保持一致。沿分歧点展开。输出格式:\n——故事单元——\n(正文)\n——更新后的线索——\n仍然开放的:\n新出现的:\n已闭合的:\n——可继续的方向——\n方向1:",
+          "prompt": "画布概要:{{canvas_summary}}\n延展方向:{{direction||'沿现有线索继续'}}\n分歧点选择:{{branch_choice||'无'}}"
+        },
+        {
+          "id": "parse",
+          "type": "code",
+          "code": "function parse(r){const p=r.split(/——/);let s='',t='';for(let i=0;i<p.length;i++){const x=p[i].trim();if(x.includes('故事单元')&&i+1<p.length)s+=p[i+1];if(x.includes('线索')&&i+1<p.length)t+=p[i+1];}return{main:s||'',threads:t||''};}"
+        }
+      ]
+    },
+    {
+      "name": "audit",
+      "description": "145门禁+15维指纹+修订建议",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "code",
+          "type": "code",
+          "code": "function audit(t){const s=t.split(/[。！？.!?\\n]/).filter(x=>x.trim().length>3);const p=t.split('\\n\\n').filter(x=>x.trim());const l=t.split('\\n');const c=(w,ws)=>ws.reduce((a,b)=>a+w.split(b).length-1,0);const h=(w,ws)=>ws.some(b=>w.includes(b));const is=[];const tn=c(t,['但','却','然而','突然','竟','没想到']);if(tn<p.length*0.3)is.push({g:'SVT-02',s:'B',m:'连续平坦',r:'增加转折词密度'});if(!h(t.slice(0,300),['突然','但','却','问题']))is.push({g:'IIT-01',s:'B',m:'煽动晚',r:'前300字加入冲突'});const gp=c(t,['没想到','出乎','原来','岂料','偏偏','谁知']);if(gp/s.length*100<2)is.push({g:'GDA-01',s:'B',m:'鸿沟荒',r:'增加鸿沟词'});if(t.split('?').length+t.split('？').length-2<3)is.push({g:'RVI-01',s:'W',m:'好奇不足',r:'增加疑问句'});if(!h(t.slice(0,500),['但','却','冲突','杀','死','逃','怒']))is.push({g:'G3-01',s:'B',m:'首章冲突',r:'前500字加冲突'});if(c(t.slice(0,2000),['手','目光','眼神','沉默','颤抖'])<3)is.push({g:'TPE-02',s:'W',m:'触点不足',r:'增加体感触点'});if(c(t.slice(0,2000),['碾压','反击','揭穿','震惊','逆袭'])<1)is.push({g:'PLE-01',s:'W',m:'爽点不足',r:'增加爽点词'});if(c(t.slice(0,2000),['想要','希望','渴望','梦想'])<1)is.push({g:'DDT-01',s:'W',m:'欲望不明',r:'让角色表达欲望'});if(c(t,['然而','值得注意的是','不可否认'])>3)is.push({g:'LANG-05',s:'W',m:'AI腔',r:'减少AI词'});if(t.length>1000&&!h(t.slice(-200),['突然','但','竟然','原来']))is.push({g:'BRK-01',s:'W',m:'章尾钩子',r:'结尾加悬念'});const i1=c(t,['犹豫','害怕','矛盾','自责']);const i2=c(t,['争吵','冷战','对决']);if(i1<1&&i2<1)is.push({g:'CLM-01',s:'W',m:'冲突单一',r:'增加冲突层次'});if(c(t.slice(0,500),['谁','为什么','怎么'])<2)is.push({g:'SPN-01',s:'W',m:'悬念不足',r:'前500字设悬念'});if(c(t,['想要','希望'])<1&&c(t,['害怕','担心'])<1)is.push({g:'ARC-01',s:'W',m:'角色欲望缺',r:'让角色表达欲望'});const sg5=['煽动','转折','危机','高潮','解决'].filter(w=>t.includes(w));if(sg5.length<3)is.push({g:'STR-01',s:'W',m:'SG5不完整',r:'补充SG5阶段'});if(c(t,['如前所述','之前说过'])>2)is.push({g:'NFR-01',s:'W',m:'过度复述',r:'减少复述'});const blk=is.filter(x=>x.s==='B').length;const wrn=is.filter(x=>x.s==='W').length;const sl=s.map(x=>x.length);const dl=l.filter(x=>x.trim().startsWith('「')||x.trim().startsWith('\"')||x.includes('」')).length;const fp_c=(t.match(/[我]/g)||[]).length;const tp_c=(t.match(/[他她]/g)||[]).length;const gc=c(t,['但','却','然而','没想到','突然','竟']);const fc=c(t,['但','却','然而','突然','竟','原来']);const tc=c(t,['手','目光','眼神','沉默','颤抖','脸色','脚步']);const pc=c(t,['碾压','反击','揭穿','震惊','逆袭','翻身','打脸']);const dc=c(t,['想要','希望','渴望','梦想']);const ac=c(t,['然而','值得注意的是','不可否认']);const qc=t.split('?').length+t.split('？').length-2;const ep=c(t,['温暖','希望','爱','开心','幸福']);const en=c(t,['悲伤','痛苦','绝望','愤怒','恐惧']);return{gates:is,block:blk,warn:wrn,score:Math.max(0,100-blk*20-wrn*5),fingerprint:{rhythm:{mean_sl:Math.round(sl.reduce((a,b)=>a+b,0)/sl.length),gap_density:Math.round(gc/s.length*100)/100,flip_rate:Math.round(fc/s.length*100)/100},voice:{first_person_ratio:Math.round(fp_c/(fp_c+tp_c)*100)/100,dialogue_ratio:Math.round(dl/l.length*100)/100},emotion:{sentiment:Math.round((ep-en)/(ep+en)*100)/100,pos:ep,neg:en},craft:{touch:Math.round(tc/s.length*100)/100,pleasure:Math.round(pc/s.length*100)/100,desire:Math.round(dc/s.length*100)/100,curiosity:qc,ai:Math.round(ac/s.length*100)/100}},summary:{chars:t.length,sentences:s.length}},revision:is.filter(i=>i.r).map(i=>({g:i.g,m:i.m,s:i.r}))}"
+        }
+      ]
+    },
+    {
+      "name": "write",
+      "description": "四种写作模式",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "idea": {
+            "type": "string"
+          },
+          "config": {
+            "type": "string"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "llm",
+          "type": "llm",
+          "model": "claude-3.5-sonnet",
+          "system": "写作助手。fragment=300-500开场;chapter=完整章节;rewrite=按门禁修改;develop=展开规划",
+          "prompt": "模式:{{mode}}\n想法:{{idea}}\n配置:{{config}}"
+        }
+      ]
+    }
+  ],
+  "prompt": {
+    "system": "你是 AEsir 故事织机 v4.1。\n\n核心:用户说模糊想法时前3次先问3个问题再发散。之后直接发散。发散5条世界线含可能性方向。收敛支持short/standard/outline三种粒度。故事中含分歧点。\n\n审计升级:用户粘贴文本或说审计时调用audit。审计覆盖15个门禁组(SVT/IIT/GDA/RVI/G3/TPE/PLE/DDT/LANG/BRK/CLM/SPN/ARC/STR/NFR)。输出含门禁列表和每条修订建议、BLOCK/WARN数、评分、15维指纹(节奏/语音/情感/技巧)、修订建议列表。用户说按意见改时重写。\n\n画布:用户说画布时展示所有单元和线索。完成后主动问继续还是计入。\n\n能力:构思/帮我想→发散;选X条→收敛;重来short/outline→换粒度;审计/检查→audit;按意见改→重写;分析/指纹→指纹;画布→展示;写/写作→write。\n\n约束(自用):SG5煽动/转折/危机/高潮/解决;Storr角色缺陷冲突来自认知差;Cron行动展示不解释;Maass每页微张力;Pixar巧合只惹麻烦。",
+    "start": {
+      "text": "✦ AEsir 故事织机 v4.1。15门禁组+15维指纹+修订建议。说一个念头开始。",
+      "actions": []
+    }
+  }
+}
