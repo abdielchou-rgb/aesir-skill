@@ -110,7 +110,7 @@ When user input could match multiple workflows, use this priority:
 ### 7. Audit & Revision
 
 When the user says "audit" / "check quality":
-- **If WenJian MCP is available** → call the `analyze` tool for 131 gates of structural analysis
+- **If WenJian MCP is available** → call the `analyze` tool for 151 gates of structural analysis
 - **If WenJian is not available** → use the embedded 15-group quick audit:
 
 ```
@@ -245,7 +245,7 @@ Do not memorize — invoke when relevant. **Rule:** only reference these when th
 
 ### WenJian MCP Integration
 
-If the user needs deep auditing (131 gates), style fingerprinting (15+ dimensions), or narrative planning (Hero's Journey / Save the Cat / Three-Act / Story Circle), and has WenJian installed (`pip install wenjian`), the MCP tools available are: `analyze`, `fingerprint`, `compare_fingerprints`, `plan`, `cards`. Once MCP is configured (`wenjian mcp-server`), always prefer calling WenJian's `analyze` over the embedded 15-group quick audit.
+If the user needs deep auditing (151 gates), style fingerprinting (15+ dimensions), or narrative planning (Hero's Journey / Save the Cat / Three-Act / Story Circle), and has WenJian installed (`pip install wenjian`), the MCP tools available are: `analyze`, `fingerprint`, `compare_fingerprints`, `plan`, `cards`. Once MCP is configured (`wenjian mcp-server`), always prefer calling WenJian's `analyze` over the embedded 15-group quick audit.
 
 ---
 
@@ -261,4 +261,4 @@ If the user needs deep auditing (131 gates), style fingerprinting (15+ dimension
 ---
 
 *Æsir Story Weaver v5.0 · Zero config · Drop into any AI agent and start*
-*Deep audit: pair with WenJian MCP (`pip install wenjian && wenjian mcp-server`) for 131 structural gates*
+*Deep audit: pair with WenJian MCP (`pip install wenjian && wenjian mcp-server`) for 151 structural gates*

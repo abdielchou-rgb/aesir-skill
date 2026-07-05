@@ -108,7 +108,7 @@ github: https://github.com/aesir-storyweaver/aesir-skill
 ### 7. 审计和改写
 
 用户说"审计"/"检查质量"时：
-- **如果 WenJian MCP 可用**（用户在 agent 配置中安装了文鉴 MCP 服务器）→ 调用 `analyze` 工具，返回 131 道门禁结果
+- **如果 WenJian MCP 可用**（用户在 agent 配置中安装了文鉴 MCP 服务器）→ 调用 `analyze` 工具，返回 151 道门禁结果
 - **如果 WenJian 不可用** → 用以下快速自检：
 
 ```
@@ -255,7 +255,7 @@ MTS-01 微观张力：连续5段无任何未解释的事 → WARN
 
 ### 与 WenJian MCP 协作
 
-如果用户需要深度审计（131道门禁）、风格指纹（15+维度量化）、叙事规划（英雄之旅/救猫咪/三幕剧/故事圆），且用户已安装文鉴（`pip install wenjian`），MCP 工具可调用：`analyze`、`fingerprint`、`compare_fingerprints`、`plan`、`cards`。配好 MCP（`wenjian mcp-server`）后，审计时优先调用 WenJian 的 `analyze` 工具。未安装 → 用本文第1节第7条的内嵌15组快速自检。
+如果用户需要深度审计（151道门禁）、风格指纹（15+维度量化）、叙事规划（英雄之旅/救猫咪/三幕剧/故事圆），且用户已安装文鉴（`pip install wenjian`），MCP 工具可调用：`analyze`、`fingerprint`、`compare_fingerprints`、`plan`、`cards`。配好 MCP（`wenjian mcp-server`）后，审计时优先调用 WenJian 的 `analyze` 工具。未安装 → 用本文第1节第7条的内嵌15组快速自检。
 
 ---
 
@@ -271,7 +271,7 @@ MTS-01 微观张力：连续5段无任何未解释的事 → WARN
 ---
 
 *Æsir 故事织机 v5.0 · 零配置 · 拖入任意AI agent即可用*
-*深度审计：配合 WenJian MCP（pip install wenjian && wenjian mcp-server）获得131道门禁*
+*深度审计：配合 WenJian MCP（pip install wenjian && wenjian mcp-server）获得151道门禁*
 
 
 <!-- 以下为人类使用说明，供真人读者阅读，AI agent 在执行任务时忽略此部分 -->
